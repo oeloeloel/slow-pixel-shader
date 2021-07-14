@@ -1,14 +1,24 @@
 
 def mainImage(fragColor, fragCoord)
   # # Normalized pixel coordinates (from 0 to 1)
-  uv = vec2.new(fragCoord/iResolution.xy)
+  # uv = vec2.new(fragCoord/iResolution.xy)
+  uv_x = fragCoord.x/iResolution.x
+  uv_y = fragCoord.y/iResolution.y
 
   # # Time varying pixel color
-  col = vec3.new(0.5 + 0.5*cos(iTime+uv.xyx+vec3.new(0,2,4)))
+  # col = vec3.new(0.5 + 0.5*cos(iTime+uv.xyx+vec3.new(0,2,4)))
+  col_r = 0.5 + 0.5 * cos(iTime + uv_x)
+  col_g = 0.5 + 0.5 * cos(iTime + uv_y + 2)
+  col_b = 0.5 + 0.5 * cos(iTime + uv_x + 4)
 
   # # Output to screen
-  $fragColor = vec4.new(col,1.0)
+  # $fragColor = vec4.new(col,1.0)
   # puts fragColor.z if x==0 && y==0
+  $fragColor.x = col_r
+  $fragColor.y = 0.0
+  $fragColor.z = 0.0
+
+  puts iTime if $args.tick_count == 0
 end
 
 def fragColor
