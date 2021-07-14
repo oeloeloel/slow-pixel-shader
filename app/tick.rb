@@ -11,4 +11,5 @@ def tick args
   # if args.tick_count < 600
   #   args.outputs.screenshots << [0, 0, 400, 225, "shots/shader4_#{args.tick_count}.png", 0, 0, 0, 0]
   # end
+  
 end

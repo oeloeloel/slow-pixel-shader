@@ -13,7 +13,15 @@ class Pixel
   end
 
   def draw_override ffi_draw
-    mainImage(self)
+    $fragColor = vec4.new(@r, @g, @b, 1)
+    $fragCoord = vec2.new(@x, @y)
+    mainImage($fragColor, $fragCoord)
+    @r = $fragColor.x
+    @g = $fragColor.y
+    @b = $fragColor.z
+
+    # puts $fragColor if $args.tick_count.zero?
+
     ffi_draw.draw_solid(
       @x * @w,
       @y * @h,
@@ -31,8 +39,7 @@ module Shader
   def self.setup(args, w, h, scale)
     @w, @h, @scale = w, h, scale
     $pixels = make_pixels(args)
-    $iResolution_x = w
-    $iResolution_y = h
+    $iResolution = vec3.new(w, h, 1)
     $start_time = Time.now.to_f
   end
 
@@ -51,8 +58,8 @@ module Shader
   end
 
   def self.shader_tick(args)
-    $mouse_x = args.mouse.x / ($iResolution_x * @scale)
-    $mouse_y = args.mouse.y / ($iResolution_y * @scale)
+    $mouse_x = args.mouse.x / ($iResolution.x * @scale)
+    $mouse_y = args.mouse.y / ($iResolution.y * @scale)
     $iTime = Time.now.to_f - $start_time
   end
 
@@ -62,6 +69,18 @@ module Shader
 
   def degrees(radians)
     radians.to_degrees
+  end
+
+  def cos(*params)
+    if params[0].is_a? Vec3
+      Vec3.new(
+        Math.cos(params[0].x).to_radians,
+        Math.cos(params[0].y).to_radians,
+        Math.cos(params[0].z).to_radians
+      )
+    else
+      Math.cos(params[0].to_radians)
+    end
   end
 
   def pow(x, y)
