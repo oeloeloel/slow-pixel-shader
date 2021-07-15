@@ -13,11 +13,11 @@
 
 def mainImage(fragColor, fragCoord)
   # # Normalized pixel coordinates (from 0 to 1)
-  uv = vec2 fragCoord/iResolution.xy
+  uv = vec2 fragCoord/iResolution.xy;
  
   # # Time varying pixel color
-  col = vec3 0.5 + 0.5*cos(iTime+uv.xyx+vec3(0,2,4))
+  col = vec3 0.5 + 0.5*cos(iTime+uv.xyx+vec3(0,2,4));
 
   # # Output to screen
-  $fragColor = vec4(col.x, col.y, col.z, 1.0)
+  $fragColor = vec4(col, 1.0);
 end

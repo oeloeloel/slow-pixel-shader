@@ -314,7 +314,7 @@ def vec2 *params
       v = Vec2.new(*params)
       $vec2_pool << v
     else
-      v.x, vy = *params
+      v.x, v.y = *params
     end
     $vec2_counter +=1
     v
@@ -376,7 +376,11 @@ class Vec2
   end
 
   def / other
-    vec2(@x / other.x, @y / other.y)
+    if other.is_a? Vec2
+      vec2(@x / other.x, @y / other.y)
+    elsif other.is_a? Fixnum
+      vec2(@x / other, @y / other)
+    end
   end
 
   def serialize
