@@ -8,21 +8,27 @@ class Pixel
     @y = y
     @w = scale
     @h = scale
-    # @r, @g, @b = r, g, b
+    # @r, @g, @b = r, g, b # maybe or maybe not needed
+
+    $vec2_pool = []
+    $vec3_pool = []
+    $vec4_pool = []
     args.outputs.static_solids << self
   end
 
   def draw_override ffi_draw
-    # $fragColor = vec4.new(@r, @g, @b, 1)
+    # $fragColor = vec4.new(@r, @g, @b, 1) # maybe or maybe not needed
     $fragCoord.x = @x
     $fragCoord.y = @y
+
+    $vec2_counter = 0
+    $vec3_counter = 0
+    $vec4_counter = 0
 
     mainImage($fragColor, $fragCoord)
     @r = $fragColor.x
     @g = $fragColor.y
     @b = $fragColor.z
-
-    # puts $fragColor if $args.tick_count.zero?
 
     ffi_draw.draw_solid(
       @x * @w,
@@ -34,7 +40,6 @@ class Pixel
 end
 
 module Shader
-
   include Math
   include Geometry
 
@@ -304,7 +309,15 @@ def vec2 *params
   if params[0].is_a? Vec2
     params[0]
   else
-    Vec2.new *params
+    v = $vec2_pool.at($vec2_counter)
+    if v.nil?
+      v = Vec2.new(*params)
+      $vec2_pool << v
+    else
+      v.x, vy = *params
+    end
+    $vec2_counter +=1
+    v
   end
 end
 
@@ -312,7 +325,15 @@ def vec3 *params
   if params[0].is_a? Vec3
     params[0]
   else
-    Vec3.new *params
+    v = $vec3_pool.at($vec3_counter)
+    if v.nil?
+      v = Vec3.new(*params)
+      $vec3_pool << v
+    else
+      v.x, v.y, v.z = *params
+    end
+    $vec3_counter +=1
+    v
   end
 end
 
@@ -320,7 +341,22 @@ def vec4 *params
   if params[0].is_a? Vec4
     params[0]
   else
-    Vec4.new *params
+    v = $vec4_pool.at($vec4_counter)
+    if v.nil?
+      v = Vec4.new(*params)
+      $vec4_pool << v
+    else
+      if params[0].is_a? Vec3
+        v.x = params[0].x
+        v.y = params[0].y
+        v.z = params[0].z
+        v.w = params[1]
+      else
+        v.x, v.y, v.z, v.w = *params
+      end
+    end
+    $vec4_counter +=1
+    v
   end
 end
 
@@ -335,15 +371,12 @@ class Vec2
     end
   end
 
-  def / other
-    Vec2.new(
-      self.x / other.x,
-      self.y / other.y
-    )
+  def xyx
+    vec3 @x, @y, @x
   end
 
-  def xyx
-    Vec3.new(@x, @y, @x)
+  def / other
+    vec2(@x / other.x, @y / other.y)
   end
 
   def serialize
@@ -360,7 +393,7 @@ class Vec2
 end
 
 class Vec3
-  attr_accessor :x, :y, :z, :xy
+  attr_accessor :x, :y, :z
   def initialize *params
     if params.size == 3
       @x, @y, @z = *params
@@ -369,8 +402,10 @@ class Vec3
       @y = params[0].y
       @z = params[0].z
     end
+  end
 
-    @xy = Vec2.new(@x, @y)
+  def xy
+    vec2 @x, @y
   end
 
   def + other
@@ -395,7 +430,7 @@ class Vec3
 end
 
 class Vec4
-  attr_accessor :x, :y, :z, :w, :xyx
+  attr_accessor :x, :y, :z, :w
 
   def initialize *params
     if params[0].is_a? Vec2
@@ -421,8 +456,6 @@ class Vec4
     else
       @x, @y, @z, @w = *params
     end
-
-    @xyx = Vec3.new(@x, @y, @x)
   end
 
   def serialize

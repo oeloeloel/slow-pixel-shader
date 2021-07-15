@@ -12,12 +12,12 @@
 
 
 def mainImage(fragColor, fragCoord)
-  # # # Normalized pixel coordinates (from 0 to 1)
+  # # Normalized pixel coordinates (from 0 to 1)
   uv = vec2 fragCoord/iResolution.xy
-
-  # # # Time varying pixel color
+ 
+  # # Time varying pixel color
   col = vec3 0.5 + 0.5*cos(iTime+uv.xyx+vec3(0,2,4))
 
-  # # # Output to screen
-  $fragColor = vec4(col, 1.0)
+  # # Output to screen
+  $fragColor = vec4(col.x, col.y, col.z, 1.0)
 end
