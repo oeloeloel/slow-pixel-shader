@@ -8,13 +8,15 @@ class Pixel
     @y = y
     @w = scale
     @h = scale
-    @r, @g, @b = r, g, b
+    # @r, @g, @b = r, g, b
     args.outputs.static_solids << self
   end
 
   def draw_override ffi_draw
-    $fragColor = vec4.new(@r, @g, @b, 1)
-    $fragCoord = vec2.new(@x, @y)
+    # $fragColor = vec4.new(@r, @g, @b, 1)
+    $fragCoord.x = @x
+    $fragCoord.y = @y
+
     mainImage($fragColor, $fragCoord)
     @r = $fragColor.x
     @g = $fragColor.y
@@ -39,8 +41,10 @@ module Shader
   def self.setup(args, w, h, scale)
     @w, @h, @scale = w, h, scale
     $pixels = make_pixels(args)
-    $iResolution = vec3.new(w, h, 1)
+    $iResolution = Vec3.new(w, h, 1)
     $start_time = Time.now.to_f
+    $fragColor = Vec4.new(0.0, 0.0, 0.0, 0.0)
+    $fragCoord = Vec2.new(0.0, 0.0)
   end
 
   def self.make_pixels(args)
@@ -63,6 +67,14 @@ module Shader
     $iTime = Time.now.to_f - $start_time
   end
 
+  def iTime
+    $iTime
+  end
+
+  def iResolution
+    $iResolution
+  end
+
   def radians(degrees)
     degrees.to_radians
   end
@@ -74,12 +86,12 @@ module Shader
   def cos(*params)
     if params[0].is_a? Vec3
       Vec3.new(
-        Math.cos(params[0].x).to_radians,
-        Math.cos(params[0].y).to_radians,
-        Math.cos(params[0].z).to_radians
+        Math.cos(params[0].x),
+        Math.cos(params[0].y),
+        Math.cos(params[0].z)
       )
     else
-      Math.cos(params[0].to_radians)
+      Math.cos(params[0])
     end
   end
 
@@ -252,4 +264,176 @@ Geometric Functions
   bvec not (bvec x)
 =end
 
+end
+
+class Float
+  unless instance_methods.include? :__original_add__
+    alias :__original_add__ :+
+  end
+
+  unless instance_methods.include? :__original_multiply__
+    alias :__original_multiply__ :*
+  end
+
+  def +(other)
+    if other.is_a? Vec3
+      Vec3.new(
+        self + other.x,
+        self + other.y,
+        self + other.z
+      )
+    else
+      __original_add__ other
+    end
+  end
+
+  def *(other)
+    if other.is_a? Vec3
+      Vec3.new(
+        self * other.x,
+        self * other.y,
+        self * other.z
+      )
+    else
+      __original_multiply__ other
+    end
+  end
+end
+
+def vec2 *params
+  if params[0].is_a? Vec2
+    params[0]
+  else
+    Vec2.new *params
+  end
+end
+
+def vec3 *params
+  if params[0].is_a? Vec3
+    params[0]
+  else
+    Vec3.new *params
+  end
+end
+
+def vec4 *params
+  if params[0].is_a? Vec4
+    params[0]
+  else
+    Vec4.new *params
+  end
+end
+
+class Vec2
+  attr_accessor :x, :y
+  def initialize *params
+    if params[0].is_a? Vec2
+      @x = params[0].x
+      @y = params[0].y
+    else
+      @x, @y = *params
+    end
+  end
+
+  def / other
+    Vec2.new(
+      self.x / other.x,
+      self.y / other.y
+    )
+  end
+
+  def xyx
+    Vec3.new(@x, @y, @x)
+  end
+
+  def serialize
+    { x: @x, y: @y }
+  end
+
+  def inspect
+    "#{serialize}"
+  end
+
+  def to_s
+    "#{serialize}"
+  end
+end
+
+class Vec3
+  attr_accessor :x, :y, :z, :xy
+  def initialize *params
+    if params.size == 3
+      @x, @y, @z = *params
+    elsif params.size == 1
+      @x = params[0].x
+      @y = params[0].y
+      @z = params[0].z
+    end
+
+    @xy = Vec2.new(@x, @y)
+  end
+
+  def + other
+    Vec3.new(
+      @x + other.x,
+      @y + other.y,
+      @z + other.z
+    )
+  end
+
+  def serialize
+    { x: @x, y: @y, z: @z }
+  end
+
+  def inspect
+    "#{serialize}"
+  end
+
+  def to_s
+    "#{serialize}"
+  end
+end
+
+class Vec4
+  attr_accessor :x, :y, :z, :w, :xyx
+
+  def initialize *params
+    if params[0].is_a? Vec2
+      @x = params[0].x
+      @y = params[0].y
+      if params[1].is_a? Vec2
+        @z = params[1].x
+        @w = params[1].y
+      else
+        @z = params[1]
+        @w = params[2]
+      end
+    elsif params[0].is_a? Vec3
+      @x = params[0].x
+      @y = params[0].y
+      @z = params[0].z
+      @w = params[1]
+    elsif params[0].is_a? Vec4
+      @x = params[0].x
+      @y = params[0].y
+      @z = params[0].z
+      @w = params[0].w
+    else
+      @x, @y, @z, @w = *params
+    end
+
+    @xyx = Vec3.new(@x, @y, @x)
+  end
+
+  def serialize
+    { x: @x, y: @y, z: @z, w: @w }
+  end
+
+  def inspect
+    "#{serialize}"
+  end
+
+  def to_s
+    "#{serialize}"
+  end
 end
