@@ -80,6 +80,10 @@ module Shader
     $iResolution
   end
 
+  def float a; end
+
+  def define a; end
+
   def radians(degrees)
     degrees.to_radians
   end
@@ -98,6 +102,10 @@ module Shader
     else
       Math.cos(params[0])
     end
+  end
+
+  def atan(x, y)
+    Math.atan2(x, y)
   end
 
   def pow(x, y)
@@ -154,7 +162,14 @@ module Shader
     x.clamp(min_v, max_v)
   end
 
-  def length(x, y)
+  def length(*params)
+    if params[0].is_a? Vec2
+      x = params[0].x
+      y = params[0].y
+    else
+      x = params[0]
+      y = params[1] || 0
+    end
     sqrt(x * x + y * y)
   end
 
@@ -269,6 +284,59 @@ Geometric Functions
   bvec not (bvec x)
 =end
 
+  def vec2 *params
+    return params[0] if params[0].is_a? Vec2
+
+    v = $vec2_pool.at($vec2_counter)
+    if v.nil?
+      v = Vec2.new(*params)
+      $vec2_pool << v
+    else
+      v.x, v.y = *params
+    end
+    $vec2_counter +=1
+    v
+  end
+
+  def vec3 *params
+    if params[0].is_a? Vec3
+      params[0]
+    else
+      v = $vec3_pool.at($vec3_counter)
+      if v.nil?
+        v = Vec3.new(*params)
+        $vec3_pool << v
+      else
+        v.x, v.y, v.z = *params
+      end
+      $vec3_counter +=1
+      v
+    end
+  end
+
+  def vec4 *params
+    if params[0].is_a? Vec4
+      params[0]
+    else
+      v = $vec4_pool.at($vec4_counter)
+      if v.nil?
+        v = Vec4.new(*params)
+        $vec4_pool << v
+      else
+        if params[0].is_a? Vec3
+          v.x = params[0].x
+          v.y = params[0].y
+          v.z = params[0].z
+          v.w = params[1]
+        else
+          v.x, v.y, v.z, v.w = *params
+        end
+      end
+      $vec4_counter +=1
+      v
+    end
+  end
+
 end
 
 class Float
@@ -305,61 +373,6 @@ class Float
   end
 end
 
-def vec2 *params
-  if params[0].is_a? Vec2
-    params[0]
-  else
-    v = $vec2_pool.at($vec2_counter)
-    if v.nil?
-      v = Vec2.new(*params)
-      $vec2_pool << v
-    else
-      v.x, v.y = *params
-    end
-    $vec2_counter +=1
-    v
-  end
-end
-
-def vec3 *params
-  if params[0].is_a? Vec3
-    params[0]
-  else
-    v = $vec3_pool.at($vec3_counter)
-    if v.nil?
-      v = Vec3.new(*params)
-      $vec3_pool << v
-    else
-      v.x, v.y, v.z = *params
-    end
-    $vec3_counter +=1
-    v
-  end
-end
-
-def vec4 *params
-  if params[0].is_a? Vec4
-    params[0]
-  else
-    v = $vec4_pool.at($vec4_counter)
-    if v.nil?
-      v = Vec4.new(*params)
-      $vec4_pool << v
-    else
-      if params[0].is_a? Vec3
-        v.x = params[0].x
-        v.y = params[0].y
-        v.z = params[0].z
-        v.w = params[1]
-      else
-        v.x, v.y, v.z, v.w = *params
-      end
-    end
-    $vec4_counter +=1
-    v
-  end
-end
-
 class Vec2
   attr_accessor :x, :y
   def initialize *params
@@ -378,8 +391,24 @@ class Vec2
   def / other
     if other.is_a? Vec2
       vec2(@x / other.x, @y / other.y)
-    elsif other.is_a? Fixnum
+    elsif other.is_a? Numeric
       vec2(@x / other, @y / other)
+    end
+  end
+
+  def * other
+    if other.is_a? Vec2
+      vec2(@x * other.x, @y * other.y)
+    elsif other.is_a? Numeric
+      vec2(@x * other, @y * other)
+    end
+  end
+
+  def - other
+    if other.is_a? Vec2
+      vec2(@x - other.x, @y - other.y)
+    elsif other.is_a? Numeric
+      vec2(@x - other, @y - other)
     end
   end
 
